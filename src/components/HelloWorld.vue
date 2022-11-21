@@ -1,12 +1,7 @@
 <template>
   <div class="hello">
-    <div style="display: flex">
+    <div style="display: flex; margin-left: 10%">
       <div style="width: 200px; height: 800px; background-color: aqua">
-        <!-- <div v-for="(item,index) in list" :key="index" style="border:solid 1px grey;padding:5px 0" draggable="true">
-        {{item.label}}
-      </div> -->
-        <!-- :force-fallback="true" -->
-
         <draggable
           class="dragArea"
           :list="list"
@@ -30,20 +25,51 @@
       </div>
       <div
         id="preDownload"
-        style="width: 800px; height: 100%;min-height: 800px; border:2px solid grey"
+        style="
+          width: 800px;
+          height: 100%;
+          min-height: 800px;
+          border: 2px solid grey;
+        "
       >
         <!-- <div v-for="(item, index) in l" :key="index" >
           <component :is="item"></component>
         </div> -->
         <div class="test-center">
-          <div style="text-align:center">
-            <div >div </div>
-            <h2>这是h2标签</h2>
-            <h6>这是h6标签</h6>
-            <p style="font-size: 35px;">set font-size</p>
-            <p style="color: red;">set font-color</p>
+          <div style="text-align: center">
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+           
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <div>div</div>
+            <div>ceshi </div>
+            <p style="font-size: 35px">set font-size</p>
+            <p style="color: red">set font-color</p>
           </div>
-          
         </div>
         <draggable
           class="dragArea list-group"
@@ -82,7 +108,7 @@
       </div>
       <!-- <button @click="test">click me</button> -->
     </div>
-    <div style="position:fixed;top:100px;right:400px">
+    <div style="position: fixed; top: 100px; right: 400px">
       <button @click="wordExport('preDownload', '测试')">下载word</button>
       <button @click="pdfExport('preDownload', '测试')">下载pdf</button>
     </div>
@@ -95,23 +121,18 @@ import bar from "./bar.vue";
 import baz from "./baz.vue";
 import { ref } from "vue";
 import draggable from "vuedraggable";
-import Vue3DraggableResizable from "vue3-draggable-resizable";
-import { DraggableContainer } from "vue3-draggable-resizable";
-
-import "vue3-draggable-resizable/dist/Vue3DraggableResizable.css";
 import domtoimage from "dom-to-image";
 import { asBlob } from "html-docx-js-typescript";
 import { saveAs } from "file-saver";
 import html2Canvas from "html2canvas";
 import JsPDF from "jspdf";
+import { Print } from 'nb-fe-pdf';
 export default {
   name: "HelloWorld",
   components: {
     foo,
     bar,
     baz,
-    Vue3DraggableResizable,
-    DraggableContainer,
     draggable,
   },
   props: {
@@ -132,7 +153,6 @@ export default {
     const cloneDog = ({ label }) => {
       return { label };
     };
-
 
     // const test = function () {
     //   l.value.push("baz");
@@ -177,18 +197,35 @@ export default {
                       }
                     </style>
                     </html>`;
-          asBlob(template).then(res=>{
+          asBlob(template).then((res) => {
             saveAs(res, `${fileName}.docx`);
           });
-          
         })
         .catch((e) => {
           console.log(e);
         });
     };
 
+    function handleGeneratePDF(id) {
+      const t = new Print({
+        moduleId: `#${id}`, // 自定义页面id
+        pageInfo: {
+          defaultType: "HEADER_TYPE",
+          needTpl: false,
+          waterMark: false,
+          // waterMarkConfig: {
+          //   waterMarkContent: 'testWaterMark',
+          //   waterMarkId: 'print-operate-report', //需要做水印的元素的id
+          // },
+        },
+      });
 
-    const pdfExport = (id,fileName) =>{
+      return t.deviceParams;
+    }
+
+    const pdfExport = (id, fileName) => {
+      // 利用nb-pdf处理下dom
+      const splitHeight = handleGeneratePDF(id).height;
       const ele = document.getElementById(id);
       html2Canvas(ele, {
         allowTaint: true,
@@ -198,7 +235,8 @@ export default {
         const a4w = 190;
         const a4h = 277; // A4大小，210mm x 297mm，四边各保留10mm的边距，显示区域190x277
         // eslint-disable-next-line no-mixed-operators
-        const imgHeight = Math.floor((a4h * canvas.width) / a4w); // 按A4显示比例换算一页图像的像素高度
+        // const imgHeight = Math.floor((a4h * canvas.width) / a4w); // 按A4显示比例换算一页图像的像素高度
+        const imgHeight = splitHeight;
         let renderedHeight = 0;
 
         while (renderedHeight < canvas.height) {
@@ -236,7 +274,7 @@ export default {
         }
         PDF.save(`${fileName}.pdf`);
       });
-    }
+    };
     return {
       l,
       // test,
@@ -247,7 +285,7 @@ export default {
       cloneDog,
       handleDelete,
       wordExport,
-      pdfExport
+      pdfExport,
     };
   },
 };
@@ -255,9 +293,9 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.test-center{
+.test-center {
   /* background-color: red; */
-  text-align:center;
+  text-align: center;
 }
 .dragArea {
   height: 100%;
@@ -280,19 +318,6 @@ li {
 a {
   color: #42b983;
 }
-.itxst {
-  width: 600px;
-  display: flex;
-}
-
-.itxst > div:nth-of-type(1) {
-  flex: 1;
-}
-
-.itxst > div:nth-of-type(2) {
-  width: 270px;
-  padding-left: 20px;
-}
 
 .item {
   border: solid 1px #eee;
@@ -301,7 +326,8 @@ a {
 }
 
 .item:hover {
-  cursor: move;
+  /* cursor: move; */
+  cursor: pointer;
 }
 
 .item + .item {

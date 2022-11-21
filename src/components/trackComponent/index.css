@@ -1,0 +1,5 @@
+.track-rec {
+  position: absolute;
+  white-space: nowrap;
+  animation: bullet 10s linear infinite;
+}

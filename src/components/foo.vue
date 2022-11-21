@@ -1,15 +1,29 @@
 <template>
-  <div  >
-    <div style="width:100px;border:solid 2px grey;margin-bottom: 10px;">柱状图</div>
-    <div style="width:100%;display:flex;" class="customchart">
+  <div>
+    <div style="width: 100px; border: solid 2px grey; margin-bottom: 10px">
+      柱状图
+    </div>
+    <!-- <div style="width:100%;display:flex;" class="customchart">
       <div ref="chart1" style="width:500px;height: 300px;"></div>
-  </div>
+  </div> -->
+    <div>
+      <table border="1" style="border-collapse:collapse">
+        <tr>
+          <th>Month</th>
+          <th><img src="https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg" alt=""></th>
+        </tr>
+        <tr>
+          <td>January</td>
+          <td>$100</td>
+        </tr>
+      </table>
+    </div>
   </div>
 </template>
 
 <script>
 import * as echarts from "echarts";
-import { onMounted,ref } from "vue";
+import { onMounted, ref } from "vue";
 export default {
   name: "fooCompo",
   props: {
@@ -17,47 +31,47 @@ export default {
   },
   setup(props) {
     const chart1 = ref(null);
-    onMounted(() => {
-      const myChart = echarts.init(chart1.value);
-      const option = {
-        title: {
-          text: "Referer of a Website",
-          subtext: "Fake Data",
-          left: "center",
-        },
-        tooltip: {
-          trigger: "item",
-        },
-        legend: {
-          orient: "vertical",
-          left: "left",
-        },
-        series: [
-          {
-            name: "Access From",
-            type: "pie",
-            radius: "50%",
-            data: [
-              { value: 1048, name: "Search Engine" },
-              { value: 735, name: "Direct" },
-              { value: 580, name: "Email" },
-              { value: 484, name: "Union Ads" },
-              { value: 300, name: "Video Ads" },
-            ],
-            emphasis: {
-              itemStyle: {
-                shadowBlur: 10,
-                shadowOffsetX: 0,
-                shadowColor: "rgba(0, 0, 0, 0.5)",
-              },
-            },
-          },
-        ],
-      };
-      myChart.setOption(option);
-    });
+    // onMounted(() => {
+    //   const myChart = echarts.init(chart1.value);
+    //   const option = {
+    //     title: {
+    //       text: "Referer of a Website",
+    //       subtext: "Fake Data",
+    //       left: "center",
+    //     },
+    //     tooltip: {
+    //       trigger: "item",
+    //     },
+    //     legend: {
+    //       orient: "vertical",
+    //       left: "left",
+    //     },
+    //     series: [
+    //       {
+    //         name: "Access From",
+    //         type: "pie",
+    //         radius: "50%",
+    //         data: [
+    //           { value: 1048, name: "Search Engine" },
+    //           { value: 735, name: "Direct" },
+    //           { value: 580, name: "Email" },
+    //           { value: 484, name: "Union Ads" },
+    //           { value: 300, name: "Video Ads" },
+    //         ],
+    //         emphasis: {
+    //           itemStyle: {
+    //             shadowBlur: 10,
+    //             shadowOffsetX: 0,
+    //             shadowColor: "rgba(0, 0, 0, 0.5)",
+    //           },
+    //         },
+    //       },
+    //     ],
+    //   };
+    //   myChart.setOption(option);
+    // });
 
-    return {chart1};
+    return { chart1 };
   },
 };
 </script>
