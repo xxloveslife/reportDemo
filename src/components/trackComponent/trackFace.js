@@ -2,36 +2,116 @@ import trackHtml from "./index.html";
 import "./index.css";
 export default class TrackFaceComponent {
   constructor(a) {
+    // 原视频信息
+    this.originalInfo = [];
+    // 方向
+    this.orientation = "";
+    // 当前视频信息
+    this.currentInfo = [];
     this.html = parseDom(trackHtml);
-    this.vertices = [778,122,988,122,988,344,778,344];
-    this.recConfig = this.handleXYZ(this.vertices);
-    this.timeSection = [9200,15800];
+    this.receiveVertices = [275, 200, 458, 200, 458, 374, 275, 374],
+    // (this.receiveVertices = [173, 80, 282, 80, 282, 192, 173, 192]),
+      (this.timeSection = [6600, 8900]);
+      // (this.timeSection = [5600, 8700]);
+  }
+
+  getRecConfig(player, isFullScreen) {
+    return this.handleVertices(
+      this.receiveVertices,
+      this.originalInfo,
+      // isFullScreen
+    );
+  }
+  // 烛龙项目中,横向上下留黑(宽度拉满100),竖向左右留黑(高度拉满100)
+  // 1.根据原始宽高,和现有视频宽高,换算所有vertices点
+  // 2.计算最左边留黑部分举例视频左边的值(判断宽高,暂时按竖屏视频,也就是左右留黑计算),将这部分值加上leftPoint的实际获取值
+  convertPoint() {}
+
+  handleVertices(val, videoInfos, isFullScreen = false) {
+    //
+    // 判断视频横竖向
+    let hR, wR;
+    // 页面video实际宽高
+    if (isFullScreen) {
+      hR = videoInfos[1] / window.screen.height;
+      wR = videoInfos[0] / window.screen.width;
+    } else {
+      hR = videoInfos[1] / this.currentInfo[1]; //暂时写死300
+      wR = videoInfos[0] / this.currentInfo[0];
+    }
+
+    // // 全屏宽高
+    // const fhR = videoInfos[1] / window.screen.height;
+    // const fwR = videoInfos[0] / window.screen.width;
+    let t = [];
+    for (let index = 0; index < val.length / 2; index++) {
+      t.push(Math.round(val[index * 2] / wR));
+      t.push(Math.round(val[index * 2 + 1] / hR));
+    }
+
+    // let xx = t;
+    // debugger;
+    return this.handleXYZ(t);
   }
 
   createEl(el, player) {
+    this.videoEl = [el.clientWidth, el.clientHeight];
     el.appendChild(this.html);
     // 获取比例
     this.rateObj = getTrackRate(player, el);
   }
 
-  ready(player, e) {}
+  getOffset() {
+    let offset = "";
+    if (this.orientation == "vertical") {
+      offset = (this.videoEl[0] - this.currentInfo[0]) / 2;
+    }
+    return offset;
+  }
+
+  ready(player, e) {
+    // 获取原视频信息
+    this.originalInfo = [player.tag.videoWidth, player.tag.videoHeight];
+    // 方向
+    this.orientation =
+      player.tag.videoWidth > player.tag.videoHeight ? "landscape" : "vertical";
+    // 当前视频信息 根据videoEl计算
+    if (this.orientation == "landscape") {
+      // 横向
+      const t = Math.round(
+        this.videoEl[0] / (this.originalInfo[0] / this.originalInfo[1])
+      );
+      this.currentInfo = [this.videoEl[0], t];
+    } else if (this.orientation == "vertical") {
+      // 竖向
+      const t = Math.round(
+        this.videoEl[1] * (this.originalInfo[0] / this.originalInfo[1])
+      );
+      this.currentInfo = [t, this.videoEl[1]];
+    }
+
+    // 计算偏移量
+    this.offset = this.getOffset();
+  }
 
   playing(player, e) {}
 
   timeupdate(player, timeStamp) {
-    // console.log(timeStamp,'timeStamp');
-    console.log(this.timeSection,timeStamp.target.currentTime);
-    if(timeStamp.target.currentTime*1000>this.timeSection[0] && timeStamp.target.currentTime*1000<this.timeSection[1] ){
-      this.setTrackRec(player,true);
-    }else {
-      this.setTrackRec(player,false);
+    let yy = player.tag.videoWidth; //and  videoHeight
+    if (
+      timeStamp.target.currentTime * 1000 > this.timeSection[0] &&
+      timeStamp.target.currentTime * 1000 < this.timeSection[1]
+    ) {
+      this.setTrackRec(player, true);
+    } else {
+      this.setTrackRec(player, false);
     }
-    
   }
 
-  setTrackRec(player,b){
+  setTrackRec(player, b) {
     // 是否全屏
     let isFullScreen = player.fullscreenService.isFullScreen;
+    this.recConfig = this.getRecConfig(player, isFullScreen);
     let el = player.el();
     let componentEl = el.querySelector(".track-rec");
     if (!componentEl) {
@@ -44,8 +124,7 @@ export default class TrackFaceComponent {
       let display = cssStyles.getPropertyValue("display");
       let opacity = cssStyles.getPropertyValue("opacity");
       let visibility = cssStyles.getPropertyValue("visibility");
-      // let currentwords = 'ceshixx';
-      // let modifywords = componentEl.innerText;
+
       if (display === "none") {
         componentEl.style.setProperty("display", "block");
       }
@@ -54,12 +133,10 @@ export default class TrackFaceComponent {
       }
       if (visibility === "hidden" || b) {
         componentEl.style.setProperty("visibility", "visible");
-      }else if(!b){
+      } else if (!b) {
         componentEl.style.setProperty("display", "none");
       }
-      // if (currentwords != modifywords) {
-      //   componentEl.innerText = currentwords;
-      // }
+
       componentEl.style.width = isFullScreen
         ? `${this.recConfig.width * this.rateObj.wRate}px`
         : `${this.recConfig.width}px`;
@@ -67,26 +144,32 @@ export default class TrackFaceComponent {
         ? `${this.recConfig.height * this.rateObj.hRate}px`
         : `${this.recConfig.height}px`;
       componentEl.style.border = "1px solid red";
-      componentEl.style.left = `${this.recConfig.leftTopPoint.left}px`;
-      componentEl.style.left = `${this.recConfig.leftTopPoint.bottom}px`
+      if (this.orientation == "vertical") {
+        componentEl.style.left = `${
+          this.recConfig.leftTopPoint.left + this.offset
+        }px`;
+      } else {
+        componentEl.style.left = `${this.recConfig.leftTopPoint.left}px`;
+      }
+
+      componentEl.style.top = `${this.recConfig.leftTopPoint.top}px`;
     }
   }
 
-  handleXYZ(val = [778,122,988,122,988,344,778,344]){
-    let leftTopPoint,width,height;
-    if(val.length == 8){
-        // 确定左上角顶点距离左下角原点 第四个顶点
-      leftTopPoint = {left:val[6],bottom:val[7]};
+  handleXYZ(val) {
+    let leftTopPoint, width, height;
+    if (val.length == 8) {
+      //  第1个顶点
+      leftTopPoint = { left: val[0], top: val[1] };
       // x轴长度  (第二个顶点x轴 - 第一个顶点x轴)
-      width=val[2]-val[0];
+      width = val[2] - val[0];
       // y轴长度  (第四个顶点y轴 - 第一个顶点y轴)
-      height = val[7]-val[1];
-    }else {
-      console.error('坐标数据不正确');
+      height = val[7] - val[1];
+    } else {
+      console.error("坐标数据不正确");
     }
 
-    return {leftTopPoint,width,height};
-    
+    return { leftTopPoint, width, height };
   }
 }
 
@@ -114,4 +197,3 @@ function getTrackRate(player, el) {
 
   return computedRec(priHeight, priWidth);
 }
-

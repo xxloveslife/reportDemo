@@ -4,7 +4,6 @@
       :source="defaultUrl"
       ref="VueAliplayerV3"
       :options="options"
-      :height="600"
     />
   </div>
 </template>
@@ -79,7 +78,8 @@ export default {
       ],
     });
 
-    const defaultUrl = ref("http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4");
+    // const defaultUrl = ref("http://117.71.53.214:1316/zhulong/video/20221123/04/cd6b8a9d1b7291161daa39a683df35b4.mp4?response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20221123%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20221123T013146Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=76fd50191d4e373ce9094d41ee8530d613791869ff46d05ac3ea44d28a28d6b4");
+    const defaultUrl = ref('http://117.71.53.214:1316/zhulong/video/20221121/09/b27296f3be0922ba5802926db4ca3fde.mp4?response-content-type=video%2Fmp4&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20221123%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20221123T014403Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=87d991202d043314b665222b7848403422df8cd0159950d380e8716d89ccbbf6');
     return { options, defaultUrl };
   },
 };
