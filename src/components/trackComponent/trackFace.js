@@ -1,6 +1,7 @@
 import trackHtml from "./index.html";
 import "./index.css";
 export default class TrackFaceComponent {
+  // [{points:[],section:[startTime,endTime]}...]
   constructor(a) {
     // 原视频信息
     this.originalInfo = [];
@@ -9,48 +10,53 @@ export default class TrackFaceComponent {
     // 当前视频信息
     this.currentInfo = [];
     this.html = parseDom(trackHtml);
-    this.receiveVertices = [275, 200, 458, 200, 458, 374, 275, 374],
-    // (this.receiveVertices = [173, 80, 282, 80, 282, 192, 173, 192]),
-      (this.timeSection = [6600, 8900]);
-      // (this.timeSection = [5600, 8700]);
+    this.receiveVertices = [277, 510, 394, 510, 394, 625, 277, 625];
+    this.timeSection = [0, 30000];
+    this.receiveData = [{verticles:[275, 200, 458, 200, 458, 374, 275, 374],section:[6600, 8900]}]
   }
+
+  // handleTimeInSection(timePoint) {
+  //   this.receiveData.length>0 && this.receiveData.forEach(item=>{
+  //     if(timePoint > item.section[0] && timePoint < item.section[1]){
+  //       this.receiveVertices = item.verticles;
+  //       this.timeSection = item.section;
+  //     }
+  //   })
+  // }
 
   getRecConfig(player, isFullScreen) {
     return this.handleVertices(
       this.receiveVertices,
-      this.originalInfo,
-      // isFullScreen
+      this.originalInfo
     );
   }
-  // 烛龙项目中,横向上下留黑(宽度拉满100),竖向左右留黑(高度拉满100)
+  // 烛龙项目视频,横向上下留黑(宽度拉满100),竖向左右留黑(高度拉满100)
   // 1.根据原始宽高,和现有视频宽高,换算所有vertices点
-  // 2.计算最左边留黑部分举例视频左边的值(判断宽高,暂时按竖屏视频,也就是左右留黑计算),将这部分值加上leftPoint的实际获取值
-  convertPoint() {}
+  // 2.计算最左边留黑部分举例视频左边的值(判断宽高,暂时按竖屏视频,左右留黑计算),将这部分值加上leftPoint的实际获取值
 
   handleVertices(val, videoInfos, isFullScreen = false) {
     //
     // 判断视频横竖向
     let hR, wR;
     // 页面video实际宽高
-    if (isFullScreen) {
-      hR = videoInfos[1] / window.screen.height;
-      wR = videoInfos[0] / window.screen.width;
-    } else {
-      hR = videoInfos[1] / this.currentInfo[1]; //暂时写死300
-      wR = videoInfos[0] / this.currentInfo[0];
-    }
+    hR = videoInfos[1] / this.currentInfo[1];
+    wR = videoInfos[0] / this.currentInfo[0];
 
-    // // 全屏宽高
-    // const fhR = videoInfos[1] / window.screen.height;
-    // const fwR = videoInfos[0] / window.screen.width;
+    
     let t = [];
     for (let index = 0; index < val.length / 2; index++) {
       t.push(Math.round(val[index * 2] / wR));
       t.push(Math.round(val[index * 2 + 1] / hR));
     }
+    // if(isFullScreen){
+    //   console.log('fullscreen .. t',t);
+    // }else {
+    //   console.log('not fullScreen.. t',t)
+    // }
 
-    // let xx = t;
-    // debugger;
+    this.currentVerticles = t;
+
+  
     return this.handleXYZ(t);
   }
 
@@ -61,12 +67,42 @@ export default class TrackFaceComponent {
     this.rateObj = getTrackRate(player, el);
   }
 
-  getOffset() {
+  getOffset(isFullScreen=false) {
     let offset = "";
     if (this.orientation == "vertical") {
-      offset = (this.videoEl[0] - this.currentInfo[0]) / 2;
+      if(isFullScreen){
+        offset = (window.screen.width - this.currentInfo[0]) /2;
+      }else {
+        offset = (this.videoEl[0] - this.currentInfo[0]) / 2;
+      }
     }
     return offset;
+  }
+
+  getCurrentVideoInfoAndOffSet(isFullScreen=false){
+    // 当前视频信息 默认根据videoEl计算. 全屏下按全屏计算
+    let refer ;
+    if(!isFullScreen){
+      refer = this.videoEl;
+    }else{
+      refer = [window.screen.width,window.screen.height]
+    }
+    if (this.orientation == "landscape") {
+      // 横向
+      const t = Math.round(
+        refer[0] / (this.originalInfo[0] / this.originalInfo[1])
+      );
+      this.currentInfo = [refer[0], t];
+    } else if (this.orientation == "vertical") {
+      // 竖向
+      const t = Math.round(
+        refer[1] * (this.originalInfo[0] / this.originalInfo[1])
+      );
+      this.currentInfo = [t, refer[1]];
+    }
+
+    // 计算偏移量
+    this.offset = this.getOffset(isFullScreen);
   }
 
   ready(player, e) {
@@ -75,29 +111,12 @@ export default class TrackFaceComponent {
     // 方向
     this.orientation =
       player.tag.videoWidth > player.tag.videoHeight ? "landscape" : "vertical";
-    // 当前视频信息 根据videoEl计算
-    if (this.orientation == "landscape") {
-      // 横向
-      const t = Math.round(
-        this.videoEl[0] / (this.originalInfo[0] / this.originalInfo[1])
-      );
-      this.currentInfo = [this.videoEl[0], t];
-    } else if (this.orientation == "vertical") {
-      // 竖向
-      const t = Math.round(
-        this.videoEl[1] * (this.originalInfo[0] / this.originalInfo[1])
-      );
-      this.currentInfo = [t, this.videoEl[1]];
-    }
-
-    // 计算偏移量
-    this.offset = this.getOffset();
+    this.getCurrentVideoInfoAndOffSet();
   }
 
   playing(player, e) {}
 
   timeupdate(player, timeStamp) {
-    let yy = player.tag.videoWidth; //and  videoHeight
     if (
       timeStamp.target.currentTime * 1000 > this.timeSection[0] &&
       timeStamp.target.currentTime * 1000 < this.timeSection[1]
@@ -111,6 +130,7 @@ export default class TrackFaceComponent {
   setTrackRec(player, b) {
     // 是否全屏
     let isFullScreen = player.fullscreenService.isFullScreen;
+    this.getCurrentVideoInfoAndOffSet(isFullScreen);
     this.recConfig = this.getRecConfig(player, isFullScreen);
     let el = player.el();
     let componentEl = el.querySelector(".track-rec");
@@ -137,13 +157,12 @@ export default class TrackFaceComponent {
         componentEl.style.setProperty("display", "none");
       }
 
-      componentEl.style.width = isFullScreen
-        ? `${this.recConfig.width * this.rateObj.wRate}px`
-        : `${this.recConfig.width}px`;
-      componentEl.style.height = isFullScreen
-        ? `${this.recConfig.height * this.rateObj.hRate}px`
-        : `${this.recConfig.height}px`;
-      componentEl.style.border = "1px solid red";
+      componentEl.style.width =`${this.recConfig.width}px`;
+      componentEl.style.height = `${this.recConfig.height}px`;
+      componentEl.style.border = "2px solid red";
+      if(isFullScreen){
+        console.log('fullScreen offset',this.offset);
+      }
       if (this.orientation == "vertical") {
         componentEl.style.left = `${
           this.recConfig.leftTopPoint.left + this.offset
