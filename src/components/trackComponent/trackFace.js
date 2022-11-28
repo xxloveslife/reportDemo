@@ -1,18 +1,43 @@
-import trackHtml from "./index.html";
-import "./index.css";
+/*
+ *                        .::::.
+ *                      .::::::::.
+ *                     :::::::::::
+ *                  ..:::::::::::'
+ *               '::::::::::::'
+ *                 .::::::::::
+ *            '::::::::::::::..
+ *                 ..::::::::::::.
+ *               ``::::::::::::::::
+ *                ::::``:::::::::'        .:::.
+ *               ::::'   ':::::'       .::::::::.
+ *             .::::'      ::::     .:::::::'::::.
+ *            .:::'       :::::  .:::::::::' ':::::.
+ *           .::'        :::::.:::::::::'      ':::::.
+ *          .::'         ::::::::::::::'         ``::::.
+ *      ...:::           ::::::::::::'              ``::.
+ *     ````':.          ':::::::::'                  ::::..
+ *                        '.:::::'                    ':'````..
+ */
+
+// import trackHtml from './index.html';
+import './index.css';
 export default class TrackFaceComponent {
   // [{points:[],section:[startTime,endTime]}...]
   constructor(a) {
     // 原视频信息
     this.originalInfo = [];
     // 方向
-    this.orientation = "";
+    this.orientation = '';
     // 当前视频信息
     this.currentInfo = [];
-    this.html = parseDom(trackHtml);
+    this.html = parseDom();
     this.receiveVertices = a.vertices;
     this.timeSection = a.section;
-    // this.receiveData = [{verticles:[275, 200, 458, 200, 458, 374, 275, 374],section:[6600, 8900]}]
+    // this.receiveVertices = [277, 510, 394, 510, 394, 625, 277, 625];
+    // this.timeSection = [0, 30000];
+    // this.receiveData = [
+    //   { verticles: [275, 200, 458, 200, 458, 374, 275, 374], section: [6600, 8900] },
+    // ];
   }
 
   // handleTimeInSection(timePoint) {
@@ -24,14 +49,19 @@ export default class TrackFaceComponent {
   //   })
   // }
 
-  getRecConfig(player, isFullScreen) {
+  getRecConfig() {
     return this.handleVertices(this.receiveVertices, this.originalInfo);
   }
   // 烛龙项目视频,横向上下留黑(宽度拉满100),竖向左右留黑(高度拉满100)
   // 1.根据原始宽高,和现有视频宽高,换算所有vertices点
   // 2.计算最左边留黑部分举例视频左边的值(判断宽高,暂时按竖屏视频,左右留黑计算),将这部分值加上leftPoint的实际获取值
-
-  handleVertices(val, videoInfos, isFullScreen = false) {
+  /**
+   * @description:
+   * @param {*} val  后端数据
+   * @param {*} videoInfos video原始数据
+   * @return {*}
+   */
+  handleVertices(val, videoInfos) {
     //
     // 判断视频横竖向
     let hR, wR;
@@ -56,15 +86,16 @@ export default class TrackFaceComponent {
   }
 
   createEl(el, player) {
+    console.log(player);
     this.videoEl = [el.clientWidth, el.clientHeight];
     el.appendChild(this.html);
     // 获取比例
-    this.rateObj = getTrackRate(player, el);
+    // this.rateObj = getTrackRate(player, el);
   }
 
   getOffset(isFullScreen = false) {
-    let offset = "";
-    if (this.orientation == "vertical") {
+    let offset = '';
+    if (this.orientation == 'vertical') {
       if (isFullScreen) {
         offset = (window.screen.width - this.currentInfo[0]) / 2;
       } else {
@@ -73,7 +104,11 @@ export default class TrackFaceComponent {
     }
     return offset;
   }
-
+  /**
+   * @description:
+   * @param {*} isFullScreen 是否全屏
+   * @return {*} void
+   */
   getCurrentVideoInfoAndOffSet(isFullScreen = false) {
     // 当前视频信息 默认根据videoEl计算. 全屏下按全屏计算
     let refer;
@@ -82,17 +117,13 @@ export default class TrackFaceComponent {
     } else {
       refer = [window.screen.width, window.screen.height];
     }
-    if (this.orientation == "landscape") {
+    if (this.orientation == 'landscape') {
       // 横向
-      const t = Math.round(
-        refer[0] / (this.originalInfo[0] / this.originalInfo[1])
-      );
+      const t = Math.round(refer[0] / (this.originalInfo[0] / this.originalInfo[1]));
       this.currentInfo = [refer[0], t];
-    } else if (this.orientation == "vertical") {
+    } else if (this.orientation == 'vertical') {
       // 竖向
-      const t = Math.round(
-        refer[1] * (this.originalInfo[0] / this.originalInfo[1])
-      );
+      const t = Math.round(refer[1] * (this.originalInfo[0] / this.originalInfo[1]));
       this.currentInfo = [t, refer[1]];
     }
 
@@ -100,85 +131,107 @@ export default class TrackFaceComponent {
     this.offset = this.getOffset(isFullScreen);
   }
 
-  pause(player, e) {
-    // if (
-    //   player._TimeUpdateStamp * 1000 > this.timeSection[0] &&
-    //   player._TimeUpdateStamp * 1000 < this.timeSection[1]
-    // ) {
-    //   this.setTrackRec(player, true);
-    // } else {
-    //   this.setTrackRec(player, false);
-    // }
-    let componentEl = player.el().querySelector(".track-rec");
-    componentEl.style.setProperty("display", "none");
-  }
+  // pause(player, e) {
+  // }
 
   ready(player, e) {
+    console.log(e, 'tag');
+
     // 获取原视频信息
     this.originalInfo = [player.tag.videoWidth, player.tag.videoHeight];
     // 方向
-    this.orientation =
-      player.tag.videoWidth > player.tag.videoHeight ? "landscape" : "vertical";
+    this.orientation = player.tag.videoWidth > player.tag.videoHeight ? 'landscape' : 'vertical';
     this.getCurrentVideoInfoAndOffSet();
+
+    if (document.addEventListener) {
+      document.addEventListener('webkitfullscreenchange', exitHandler.bind(this), false);
+      document.addEventListener('mozfullscreenchange', exitHandler.bind(this), false);
+      document.addEventListener('fullscreenchange', exitHandler.bind(this), false);
+      document.addEventListener('MSFullscreenChange', exitHandler.bind(this), false);
+    }
+
+    function exitHandler() {
+      let isFullScreen =
+        document.fullScreen || document.mozFullScreen || document.webkitIsFullScreen;
+      if (
+        player.tag.currentTime * 1000 > this.timeSection[0] &&
+        player.tag.currentTime * 1000 < this.timeSection[1]
+      ) {
+        if (isFullScreen) {
+          //  进入全屏
+          this.setTrackRec(player, true, true);
+        } else {
+          //  退出全屏
+          this.setTrackRec(player, true, false);
+        }
+      }
+    }
   }
 
-  playing(player, e) {}
+  // playing(player, e) {}
 
   timeupdate(player, timeStamp) {
-    console.log(this.receiveVertices.length,'length');
-    if(this.receiveVertices.length == 8 ){
+    this.timeStamp = JSON.parse(JSON.stringify(timeStamp.target.currentTime));
+    let isFullScreen = player.fullscreenService.isFullScreen;
+    if (this.receiveVertices.length == 8) {
       if (
         timeStamp.target.currentTime * 1000 > this.timeSection[0] &&
         timeStamp.target.currentTime * 1000 < this.timeSection[1]
       ) {
-        this.setTrackRec(player, true);
+        this.setTrackRec(player, true, isFullScreen);
       } else {
-        this.setTrackRec(player, false);
+        this.setTrackRec(player, false, isFullScreen);
       }
+    } else {
+      console.error('坐标数据不正确');
     }
-    
   }
 
-  setTrackRec(player, b) {
+  /**
+   * @description:
+   * @param {*} player
+   * @param {*} b  是否显示红框
+   * @param {*} isFullScreen 是否是全屏状态下
+   * @return {*}
+   */
+  setTrackRec(player, b, isFullScreen) {
     // 是否全屏
-    let isFullScreen = player.fullscreenService.isFullScreen;
+    // let isFullScreen = player.fullscreenService.isFullScreen;
     this.getCurrentVideoInfoAndOffSet(isFullScreen);
-    this.recConfig = this.getRecConfig(player, isFullScreen);
+    this.recConfig = this.getRecConfig();
     let el = player.el();
-    let componentEl = el.querySelector(".track-rec");
+    let componentEl = el.querySelector('.track-rec');
     if (!componentEl) {
       el.appendChild(this.html);
     } else {
-      if (componentEl.className !== "track-rec") {
-        componentEl.className = "track-rec";
+      if (componentEl.className !== 'track-rec') {
+        componentEl.className = 'track-rec';
       }
       let cssStyles = getComputedStyle(componentEl);
-      let display = cssStyles.getPropertyValue("display");
-      let opacity = cssStyles.getPropertyValue("opacity");
-      let visibility = cssStyles.getPropertyValue("visibility");
+      let display = cssStyles.getPropertyValue('display');
+      let opacity = cssStyles.getPropertyValue('opacity');
+      let visibility = cssStyles.getPropertyValue('visibility');
 
-      if (display === "none") {
-        componentEl.style.setProperty("display", "block");
+      if (display === 'none') {
+        componentEl.style.setProperty('display', 'block');
       }
-      if (opacity !== "1") {
-        componentEl.style.setProperty("opacity", "1");
+      if (opacity !== '1') {
+        componentEl.style.setProperty('opacity', '1');
       }
-      if (visibility === "hidden" || b) {
-        componentEl.style.setProperty("visibility", "visible");
+      if (visibility === 'hidden' || b) {
+        componentEl.style.setProperty('visibility', 'visible');
       } else if (!b) {
-        componentEl.style.setProperty("display", "none");
+        componentEl.style.setProperty('display', 'none');
       }
 
       componentEl.style.width = `${this.recConfig.width}px`;
       componentEl.style.height = `${this.recConfig.height}px`;
-      componentEl.style.border = "2px solid red";
+      componentEl.style.border = '2px solid red';
       if (isFullScreen) {
-        console.log("fullScreen offset", this.offset);
+        console.log('fullScreen offset', this.offset);
       }
-      if (this.orientation == "vertical") {
-        componentEl.style.left = `${
-          this.recConfig.leftTopPoint.left + this.offset
-        }px`;
+      if (this.orientation == 'vertical') {
+        componentEl.style.left = `${this.recConfig.leftTopPoint.left + this.offset}px`;
       } else {
         componentEl.style.left = `${this.recConfig.leftTopPoint.left}px`;
       }
@@ -186,7 +239,11 @@ export default class TrackFaceComponent {
       componentEl.style.top = `${this.recConfig.leftTopPoint.top}px`;
     }
   }
-
+  /**
+   * @description:
+   * @param {*} val  处理过的坐标值
+   * @return {*}  位置数据
+   */
   handleXYZ(val) {
     let leftTopPoint, width, height;
     if (val.length == 8) {
@@ -197,35 +254,35 @@ export default class TrackFaceComponent {
       // y轴长度  (第四个顶点y轴 - 第一个顶点y轴)
       height = val[7] - val[1];
     } else {
-      console.error("坐标数据不正确");
+      console.error('坐标数据不正确');
     }
 
     return { leftTopPoint, width, height };
   }
 }
 
-export function parseDom(html) {
-  let ele = document.createElement("div");
+export function parseDom() {
+  let ele = document.createElement('div');
   // ele.innerHTML = html;
   ele.innerHTML = `<div class="track-rec" style="color:red;text-align: center;"></div>`;
   return ele.childNodes[0];
 }
 
-function computedRec(priHeight, priWidth) {
-  // 获取设备全屏下的高度;
-  const docHeight = window.screen.height;
-  const docWidth = window.screen.width;
-  return {
-    hRate: Math.round(docHeight / priHeight),
-    wRate: Math.round(docWidth / priWidth),
-  };
-}
+// function computedRec(priHeight, priWidth) {
+//   // 获取设备全屏下的高度;
+//   const docHeight = window.screen.height;
+//   const docWidth = window.screen.width;
+//   return {
+//     hRate: Math.round(docHeight / priHeight),
+//     wRate: Math.round(docWidth / priWidth),
+//   };
+// }
 
-function getTrackRate(player, el) {
-  const priHeight = player.getOptions().height.replace("px", "");
-  // 获取视频宽度
-  const priWidth = el.clientWidth;
-  // const priWidth = player.getOptions().width.replace("px", "");
+// function getTrackRate(player, el) {
+//   const priHeight = player.getOptions().height.replace('px', '');
+//   // 获取视频宽度
+//   const priWidth = el.clientWidth;
+//   // const priWidth = player.getOptions().width.replace("px", "");
 
-  return computedRec(priHeight, priWidth);
-}
+//   return computedRec(priHeight, priWidth);
+// }
