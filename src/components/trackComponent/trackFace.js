@@ -10,9 +10,9 @@ export default class TrackFaceComponent {
     // 当前视频信息
     this.currentInfo = [];
     this.html = parseDom(trackHtml);
-    this.receiveVertices = [277, 510, 394, 510, 394, 625, 277, 625];
-    this.timeSection = [0, 30000];
-    this.receiveData = [{verticles:[275, 200, 458, 200, 458, 374, 275, 374],section:[6600, 8900]}]
+    this.receiveVertices = a.vertices;
+    this.timeSection = a.section;
+    // this.receiveData = [{verticles:[275, 200, 458, 200, 458, 374, 275, 374],section:[6600, 8900]}]
   }
 
   // handleTimeInSection(timePoint) {
@@ -25,10 +25,7 @@ export default class TrackFaceComponent {
   // }
 
   getRecConfig(player, isFullScreen) {
-    return this.handleVertices(
-      this.receiveVertices,
-      this.originalInfo
-    );
+    return this.handleVertices(this.receiveVertices, this.originalInfo);
   }
   // 烛龙项目视频,横向上下留黑(宽度拉满100),竖向左右留黑(高度拉满100)
   // 1.根据原始宽高,和现有视频宽高,换算所有vertices点
@@ -42,7 +39,6 @@ export default class TrackFaceComponent {
     hR = videoInfos[1] / this.currentInfo[1];
     wR = videoInfos[0] / this.currentInfo[0];
 
-    
     let t = [];
     for (let index = 0; index < val.length / 2; index++) {
       t.push(Math.round(val[index * 2] / wR));
@@ -56,7 +52,6 @@ export default class TrackFaceComponent {
 
     this.currentVerticles = t;
 
-  
     return this.handleXYZ(t);
   }
 
@@ -67,25 +62,25 @@ export default class TrackFaceComponent {
     this.rateObj = getTrackRate(player, el);
   }
 
-  getOffset(isFullScreen=false) {
+  getOffset(isFullScreen = false) {
     let offset = "";
     if (this.orientation == "vertical") {
-      if(isFullScreen){
-        offset = (window.screen.width - this.currentInfo[0]) /2;
-      }else {
+      if (isFullScreen) {
+        offset = (window.screen.width - this.currentInfo[0]) / 2;
+      } else {
         offset = (this.videoEl[0] - this.currentInfo[0]) / 2;
       }
     }
     return offset;
   }
 
-  getCurrentVideoInfoAndOffSet(isFullScreen=false){
+  getCurrentVideoInfoAndOffSet(isFullScreen = false) {
     // 当前视频信息 默认根据videoEl计算. 全屏下按全屏计算
-    let refer ;
-    if(!isFullScreen){
+    let refer;
+    if (!isFullScreen) {
       refer = this.videoEl;
-    }else{
-      refer = [window.screen.width,window.screen.height]
+    } else {
+      refer = [window.screen.width, window.screen.height];
     }
     if (this.orientation == "landscape") {
       // 横向
@@ -105,6 +100,19 @@ export default class TrackFaceComponent {
     this.offset = this.getOffset(isFullScreen);
   }
 
+  pause(player, e) {
+    // if (
+    //   player._TimeUpdateStamp * 1000 > this.timeSection[0] &&
+    //   player._TimeUpdateStamp * 1000 < this.timeSection[1]
+    // ) {
+    //   this.setTrackRec(player, true);
+    // } else {
+    //   this.setTrackRec(player, false);
+    // }
+    let componentEl = player.el().querySelector(".track-rec");
+    componentEl.style.setProperty("display", "none");
+  }
+
   ready(player, e) {
     // 获取原视频信息
     this.originalInfo = [player.tag.videoWidth, player.tag.videoHeight];
@@ -117,14 +125,18 @@ export default class TrackFaceComponent {
   playing(player, e) {}
 
   timeupdate(player, timeStamp) {
-    if (
-      timeStamp.target.currentTime * 1000 > this.timeSection[0] &&
-      timeStamp.target.currentTime * 1000 < this.timeSection[1]
-    ) {
-      this.setTrackRec(player, true);
-    } else {
-      this.setTrackRec(player, false);
+    console.log(this.receiveVertices.length,'length');
+    if(this.receiveVertices.length == 8 ){
+      if (
+        timeStamp.target.currentTime * 1000 > this.timeSection[0] &&
+        timeStamp.target.currentTime * 1000 < this.timeSection[1]
+      ) {
+        this.setTrackRec(player, true);
+      } else {
+        this.setTrackRec(player, false);
+      }
     }
+    
   }
 
   setTrackRec(player, b) {
@@ -157,11 +169,11 @@ export default class TrackFaceComponent {
         componentEl.style.setProperty("display", "none");
       }
 
-      componentEl.style.width =`${this.recConfig.width}px`;
+      componentEl.style.width = `${this.recConfig.width}px`;
       componentEl.style.height = `${this.recConfig.height}px`;
       componentEl.style.border = "2px solid red";
-      if(isFullScreen){
-        console.log('fullScreen offset',this.offset);
+      if (isFullScreen) {
+        console.log("fullScreen offset", this.offset);
       }
       if (this.orientation == "vertical") {
         componentEl.style.left = `${
@@ -194,7 +206,8 @@ export default class TrackFaceComponent {
 
 export function parseDom(html) {
   let ele = document.createElement("div");
-  ele.innerHTML = html;
+  // ele.innerHTML = html;
+  ele.innerHTML = `<div class="track-rec" style="color:red;text-align: center;"></div>`;
   return ele.childNodes[0];
 }
 

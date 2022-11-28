@@ -73,7 +73,7 @@ export default {
         {
           name: "testComponent",
           type: TestComponent,
-          args: ['test'],
+          args: [{ vertices: [277, 510, 394, 510, 394, 625, 277, 625], section: [0, 30000] }],
         },
       ],
     });
